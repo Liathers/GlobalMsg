@@ -5,6 +5,16 @@ import json
 import asyncio
 devMode = False
 
+
+# fetches the prefix for the guild a command is ran in
+def get_prefix(bot, message):
+    data = json.load(open("database/prefixes.json"))
+    try:
+        return [data[str(message.guild.id)], f"<@!{bot.user.id}> "]
+    except:
+        return [config["prefix"], f"<@!{bot.user.id}> "]
+        
+
 #main config for dev testing
 if devMode == True:
     token = config["devtoken"]
@@ -15,9 +25,9 @@ else:
     prefix = config["prefix"]
     modLogChannel = config["modlog-channel"]
 
-bot = commands.Bot(command_prefix=prefix, help_command=None)
+bot = commands.Bot(command_prefix=get_prefix, help_command=None)
 devId = config["dev-id"]
-
+    
 
 
 
@@ -38,13 +48,13 @@ async def successEmbed(message, success):
 #auto moderation
 async def checkBanned(message, userId, serverId):
     #check if server is banned
-    data = json.load(open("serverbanned.json", "r"))
+    data = json.load(open("database/serverbanned.json", "r"))
     for ii in data["servers"]:
         if ii["server-id"] == serverId:
             await message.channel.send(f"This server is currently banned from broadcasting global messages, {message.author.mention}")
             return True
     #check if user is banned
-    data = json.load(open("userbanned.json", "r"))
+    data = json.load(open("database/userbanned.json", "r"))
     for ii in data["users"]:
         if ii["user-id"] == userId:
             await message.channel.send(f"You are currently banned from broadcasting global messages, {message.author.mention}")
@@ -52,7 +62,7 @@ async def checkBanned(message, userId, serverId):
 
 async def checkMessage(message, args):
     #check if args includes a filtered word
-    data = json.load(open("wordfiltered.json", "r"))
+    data = json.load(open("database/wordfiltered.json", "r"))
     args = args.lower()
     for ii in data["filtered"]:
         if ii["word"] in args:
@@ -77,7 +87,7 @@ async def checkMessage(message, args):
 
 #set global message embed colour
 async def globalColour(embed, guildId):
-    data = json.load(open("globalcolours.json", "r"))
+    data = json.load(open("database/globalcolours.json", "r"))
     for guild in data["guild"]:
         if guild["guild-id"] == guildId:
             embed.colour = discord.Colour(guild["colour-id"])
@@ -89,7 +99,7 @@ async def globalColour(embed, guildId):
 
 #send global message
 async def sendGlobal(message, args):
-    data = json.load(open("globalchannels.json", "r"))
+    data = json.load(open("database/globalchannels.json", "r"))
     userName = message.author.name
     guildName = message.guild.name
     guildId = message.guild.id
@@ -117,7 +127,7 @@ async def sendGlobal(message, args):
 
 #send global announcement
 async def sendAnnouncement(message, args, guildName):
-    data = json.load(open("globalchannels.json", "r"))
+    data = json.load(open("database/globalchannels.json", "r"))
 
     embed = discord.Embed(color=0x00bfff)
     embed.add_field(name=":mega:  Global Announcement", value=args)
@@ -156,7 +166,7 @@ async def globalModLog(message, args, embedColor):
 #json position grabber
 def globalPosition(channelId):
     position = 0
-    data = json.load(open("globalchannels.json", "r"))
+    data = json.load(open("database/globalchannels.json", "r"))
 
     for ii in data["channels"]:
         if ii["channel-id"] == channelId:
@@ -166,7 +176,7 @@ def globalPosition(channelId):
 
 def banUserPosition(userId):
     position = 0
-    data = json.load(open("userbanned.json", "r"))
+    data = json.load(open("database/userbanned.json", "r"))
 
     for ii in data["users"]:
         if ii["user-id"] == userId:
@@ -176,7 +186,7 @@ def banUserPosition(userId):
 
 def banServerPosition(serverId):
     position = 0
-    data = json.load(open("serverbanned.json", "r"))
+    data = json.load(open("database/serverbanned.json", "r"))
 
     for ii in data["servers"]:
         if ii["server-id"] == serverId:
@@ -186,7 +196,7 @@ def banServerPosition(serverId):
 
 def filterWordPosition(filterWord):
     position = 0
-    data = json.load(open("wordfiltered.json", "r"))
+    data = json.load(open("database/wordfiltered.json", "r"))
 
     for ii in data["filtered"]:
         if ii["word"] == filterWord:
@@ -196,7 +206,7 @@ def filterWordPosition(filterWord):
 
 def globalColourPosition(guildId):
     position = 0
-    data = json.load(open("globalcolours.json", "r"))
+    data = json.load(open("database/globalcolours.json", "r"))
 
     for ii in data["guild"]:
         if ii["guild-id"] == guildId:
@@ -217,7 +227,7 @@ async def on_ready():
     print(f"Logged in as {bot.user.name} - {bot.user.id}")
     while True:
         totalGuilds = str(len(bot.guilds))
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name= totalGuilds + f" guilds! | {bot.command_prefix}help"))
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name= totalGuilds + f" guilds! | @GlobalMsg help"))
         await asyncio.sleep(30)
 
 @bot.check
@@ -238,14 +248,14 @@ async def on_guild_join(guild):
 -This bot is still in early development so if you find any bugs, report them to Laith#0617!
 
 *If your server has an NSFW icon the server will get banned from global channels.*
-            """.format(bot.user.name, bot.command_prefix)
+            """.format(bot.user.name, bot.command_prefix[0])
             await channel.send(welcomePage)
 
         break
 
 @bot.event
 async def on_message(message):
-    data = json.load(open("globalchannels.json", "r"))
+    data = json.load(open("database/globalchannels.json", "r"))
     channel = message.channel.id
 
     if message.author == bot.user:
@@ -281,9 +291,10 @@ async def help(message):
 `{0}setcolour <hexadecimal>` - Set the global embed colour for this server
 `{0}resetcolour` - Reset the global embed colour for this server
 `{0}invite` - Invite this bot to your server
+`{0}`
 
 *This bot can be found on top.gg [here](https://top.gg/bot/747929473495859241)!*
-    """.format(bot.command_prefix)
+    """.format(get_prefix(bot, message))
 
     embed = discord.Embed(timestamp=message.message.created_at)
     await globalColour(embed, guildId)
@@ -299,7 +310,7 @@ async def setup(message):
     embed = discord.Embed()
     await globalColour(embed, guildId)
     embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-    embed.add_field(name=":hammer: Setup", value=f"Create a channel that will be dedicated for GlobalMsg, then use `{bot.command_prefix}bind` to bind the global chat to the channel", inline=False)
+    embed.add_field(name=":hammer: Setup", value=f"Create a channel that will be dedicated for GlobalMsg, then use `{get_prefix(bot, message)}bind` to bind the global chat to the channel", inline=False)
     await message.send(embed=embed)
 
 @bot.command()
@@ -326,7 +337,7 @@ Use [this link](https://top.gg/bot/747929473495859241/invite) to directly invite
 async def bind(message):
     channelId = message.channel.id
     guildId = message.guild.id
-    data = json.load(open("globalchannels.json", "r"))
+    data = json.load(open("database/globalchannels.json", "r"))
 
     for ii in data["channels"]:
         if ii["channel-id"] == channelId and ii["guild-id"] == guildId:
@@ -340,7 +351,7 @@ async def bind(message):
             "guild-id": guildId
         }
     )
-    json.dump(data, open("globalchannels.json", "w"), indent=4)
+    json.dump(data, open("database/globalchannels.json", "w"), indent=4)
 
     success = f"Global chat has been bound to `{message.channel.name}`!"
     await successEmbed(message, success)
@@ -354,12 +365,12 @@ async def bind(message):
 async def unbind(message):
     channelId = message.channel.id
     guildId = message.guild.id
-    data = json.load(open("globalchannels.json", "r"))
+    data = json.load(open("database/globalchannels.json", "r"))
 
     for ii in data["channels"]:
         if ii["channel-id"] == channelId and ii["guild-id"] == guildId:
             data["channels"].pop(globalPosition(channelId))
-            json.dump(data, open("globalchannels.json", "w"), indent=4)
+            json.dump(data, open("database/globalchannels.json", "w"), indent=4)
 
             success = f"Global chat has been unbound from `{message.channel.name}`!"
             await successEmbed(message, success)
@@ -378,7 +389,7 @@ async def globalban(message, arg):
     userId = int(arg)
 
     if message.author.id == devId:
-        data = json.load(open("userbanned.json", "r"))
+        data = json.load(open("database/userbanned.json", "r"))
 
         for ii in data["users"]:
             if ii["user-id"] == userId:
@@ -391,7 +402,7 @@ async def globalban(message, arg):
                 "user-id": userId,
             }
         )
-        json.dump(data, open("userbanned.json", "w"), indent=4)
+        json.dump(data, open("database/userbanned.json", "w"), indent=4)
 
         success = "That user has been banned!"
         await successEmbed(message, success)
@@ -407,13 +418,13 @@ async def globalban(message, arg):
 async def globalunban(message, arg):
     arg = arg.strip("<@!>")
     userId = int(arg)
-    data = json.load(open("userbanned.json", "r"))
+    data = json.load(open("database/userbanned.json", "r"))
 
     if message.author.id == devId:
         for ii in data["users"]:
             if ii["user-id"] == userId:
                 data["users"].pop(banUserPosition(userId))
-                json.dump(data, open("userbanned.json", "w"), indent=4)
+                json.dump(data, open("database/userbanned.json", "w"), indent=4)
 
                 success = "That user has been unbanned!"
                 await successEmbed(message, success)
@@ -434,7 +445,7 @@ async def globalserverban(message, arg):
     serverId = int(arg)
 
     if message.author.id == devId:
-        data = json.load(open("serverbanned.json", "r"))
+        data = json.load(open("database/serverbanned.json", "r"))
 
         for ii in data["servers"]:
             if ii["server-id"] == serverId:
@@ -447,7 +458,7 @@ async def globalserverban(message, arg):
                 "server-id": serverId,
             }
         )
-        json.dump(data, open("serverbanned.json", "w"), indent=4)
+        json.dump(data, open("database/serverbanned.json", "w"), indent=4)
 
         success = "That server has been banned!"
         await successEmbed(message, success)
@@ -462,13 +473,13 @@ async def globalserverban(message, arg):
 @bot.command()
 async def globalserverunban(message, arg):
     serverId = int(arg)
-    data = json.load(open("serverbanned.json", "r"))
+    data = json.load(open("database/serverbanned.json", "r"))
 
     if message.author.id == devId:
         for ii in data["servers"]:
             if ii["server-id"] == serverId:
                 data["servers"].pop(banServerPosition(serverId))
-                json.dump(data, open("serverbanned.json", "w"), indent=4)
+                json.dump(data, open("database/serverbanned.json", "w"), indent=4)
 
                 success = "That server has been unbanned!"
                 await successEmbed(message, success)
@@ -489,7 +500,7 @@ async def filteradd(message, arg):
     filterWord = arg
 
     if message.author.id == devId:
-        data = json.load(open("wordfiltered.json", "r"))
+        data = json.load(open("database/wordfiltered.json", "r"))
 
         for ii in data["filtered"]:
             if ii["word"] == filterWord:
@@ -502,7 +513,7 @@ async def filteradd(message, arg):
                 "word": filterWord,
             }
         )
-        json.dump(data, open("wordfiltered.json", "w"), indent=4)
+        json.dump(data, open("database/wordfiltered.json", "w"), indent=4)
 
         success = "That word will now be filtered!"
         await successEmbed(message, success)
@@ -517,13 +528,13 @@ async def filteradd(message, arg):
 @bot.command()
 async def filterremove(message, arg):
     filterWord = arg
-    data = json.load(open("wordfiltered.json", "r"))
+    data = json.load(open("database/wordfiltered.json", "r"))
 
     if message.author.id == devId:
         for ii in data["filtered"]:
             if ii["word"] == filterWord:
                 data["filtered"].pop(filterWordPosition(filterWord))
-                json.dump(data, open("wordfiltered.json", "w"), indent=4)
+                json.dump(data, open("database/wordfiltered.json", "w"), indent=4)
 
                 success = "That word will no longer be filtered!"
                 await successEmbed(message, success)
@@ -553,7 +564,7 @@ async def devhelp(message):
 `{0}globalunban <ping/user-id>` - Unban a user from global messaging
 `{0}globalserverunban <server-id>`  -Unban an entire server from global messaging
 `{0}filterremove <word>` - Remove a word from the filter
-        """.format(bot.command_prefix)
+        """.format(get_prefix(bot, message))
 
         embed = discord.Embed(timestamp=message.message.created_at)
         await globalColour(embed, guildId)
@@ -594,11 +605,11 @@ async def setcolour(message, arg):
         error = f"`{colourId}` is more than `16777215`. Try using hexadecimal!"
         await errorEmbed(message, error)
         return
-    data = json.load(open("globalcolours.json", "r"))
+    data = json.load(open("database/globalcolours.json", "r"))
 
     for guild in data["guild"]:
         if guild["guild-id"] == guildId:
-            error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{bot.command_prefix}resetcolour` first!"
+            error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{get_prefix(bot, message)}resetcolour` first!"
             await errorEmbed(message, error)
             return
 
@@ -608,7 +619,7 @@ async def setcolour(message, arg):
             "colour-id": colourId
         }
     )
-    json.dump(data, open("globalcolours.json", "w"), indent=4)
+    json.dump(data, open("database/globalcolours.json", "w"), indent=4)
 
     success = f"The embed colour for this server has been set to `{arg}`!"
     await successEmbed(message, success)
@@ -621,12 +632,12 @@ async def setcolour(message, arg):
 @commands.has_permissions(administrator=True)
 async def resetcolour(message):
     guildId = message.guild.id
-    data = json.load(open("globalcolours.json", "r"))
+    data = json.load(open("database/globalcolours.json", "r"))
 
     for ii in data["guild"]:
         if ii["guild-id"] == guildId:
             data["guild"].pop(globalColourPosition(guildId))
-            json.dump(data, open("globalcolours.json", "w"), indent=4)
+            json.dump(data, open("database/globalcolours.json", "w"), indent=4)
 
             success = "The embed colour for this server has been reset!"
             await successEmbed(message, success)
@@ -634,6 +645,30 @@ async def resetcolour(message):
             args = "Reset guild embed colour!"
             embedColor = 0xa900da
             await globalModLog(message, args, embedColor)
+
+
+@bot.command(pass_context=True) # <--- pretty sure pass_context is not needed :thonk:, or atleast i dont use it
+@commands.has_permissions(manage_guild=True)
+async def setprefix(ctx, prefix: str):
+
+    # if the prefix is too long return an error
+    if len(prefix) > 5:
+        return await ctx.send(f"You cannot set a prefix above 5 characters, {ctx.author.mention}")
+
+    data = json.load(open("database/prefixes.json", "r"))
+
+    data[str(ctx.guild.id)] = prefix
+
+    json.dump(
+        obj=data,
+        fp=open("database/prefixes.json", "w"),
+        indent=4
+    )
+
+    # return the embed, idk, your code is too messy lmao-
+
+
+
 
 bot.run(token)
 
