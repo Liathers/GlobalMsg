@@ -41,16 +41,16 @@ async def checkBanned(message, userId, serverId):
     data = json.load(open("serverbanned.json", "r"))
     for ii in data["servers"]:
         if ii["server-id"] == serverId:
-            await message.channel.send("This server is currently banned from broadcasting global messages, {}".format(message.author.mention))
+            await message.channel.send(f"This server is currently banned from broadcasting global messages, {message.author.mention}")
             return True
     #check if user is banned
     data = json.load(open("userbanned.json", "r"))
     for ii in data["users"]:
         if ii["user-id"] == userId:
-            await message.channel.send("You are currently banned from broadcasting global messages, {}".format(message.author.mention))
+            await message.channel.send(f"You are currently banned from broadcasting global messages, {message.author.mention}")
             return True
 
-async def checkMessage(message,args):
+async def checkMessage(message, args):
     #check if args includes a filtered word
     data = json.load(open("wordfiltered.json", "r"))
     args = args.lower()
@@ -59,17 +59,17 @@ async def checkMessage(message,args):
             embedColor = 0x00ffb7
             args = "Filtered: `" + ii["word"] + "`"
             await globalModLog(message, args, embedColor)
-            await message.channel.send("Your message has been blocked, {}".format(message.author.mention))
+            await message.channel.send(f"Your message has been blocked, {message.author.mention}")
             return True
     #check if args is < 0 chars or > maxchars
     length = len(args)
     if length == 0:
-        await message.channel.send("Your message cannot be `{0}` characters, {1}\nIf your message is an image or file, they are currently not supported".format(length, message.author.mention))
+        await message.channel.send(f"Your message cannot be `{length}` characters, {message.author.mention}\nIf your message is an image or file, they are currently not supported")
         return True
     elif message.author.id == devId:
         return False
     elif length > config["maxchars"]:
-        await message.channel.send("You cannot use more than `{0}` characters, {1}".format(config["maxchars"], message.author.mention))
+        await message.channel.send(f"You cannot use more than `{config['maxchars']}` characters, {message.author.mention}")
         return True
 
 
@@ -217,7 +217,7 @@ async def on_ready():
     print(f"Logged in as {bot.user.name} - {bot.user.id}")
     while True:
         totalGuilds = str(len(bot.guilds))
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name= totalGuilds + " guilds! | {0}help".format(bot.command_prefix)))
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name= totalGuilds + f" guilds! | {bot.command_prefix}help"))
         await asyncio.sleep(30)
 
 @bot.check
@@ -299,7 +299,7 @@ async def setup(message):
     embed = discord.Embed()
     await globalColour(embed, guildId)
     embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-    embed.add_field(name=":hammer: Setup", value="Create a channel that will be dedicated for GlobalMsg, then use `{0}bind` to bind the global chat to the channel".format(bot.command_prefix), inline=False)
+    embed.add_field(name=":hammer: Setup", value=f"Create a channel that will be dedicated for GlobalMsg, then use `{bot.command_prefix}bind` to bind the global chat to the channel", inline=False)
     await message.send(embed=embed)
 
 @bot.command()
@@ -330,7 +330,7 @@ async def bind(message):
 
     for ii in data["channels"]:
         if ii["channel-id"] == channelId and ii["guild-id"] == guildId:
-            error = "Global chat is already bound to `{}`!".format(message.channel.name)
+            error = f"Global chat is already bound to `{message.channel.name}`!"
             await errorEmbed(message, error)
             return
 
@@ -342,10 +342,10 @@ async def bind(message):
     )
     json.dump(data, open("globalchannels.json", "w"), indent=4)
 
-    success = "Global chat has been bound to `{}`!".format(message.channel.name)
+    success = f"Global chat has been bound to `{message.channel.name}`!"
     await successEmbed(message, success)
 
-    args = "Global chat has been bound to `{0}` | `{1}`!".format(message.channel.name, message.channel.id)
+    args = f"Global chat has been bound to `{message.channel.name}` | `{message.channel.id}`!"
     embedColor = 0xa900da
     await globalModLog(message, args, embedColor)
 
@@ -361,10 +361,10 @@ async def unbind(message):
             data["channels"].pop(globalPosition(channelId))
             json.dump(data, open("globalchannels.json", "w"), indent=4)
 
-            success = "Global chat has been unbound from `{}`!".format(message.channel.name)
+            success = f"Global chat has been unbound from `{message.channel.name}`!"
             await successEmbed(message, success)
     
-            args = "Global chat has been unbound from `{0}` | `{1}`!".format(message.channel.name, message.channel.id)
+            args = f"Global chat has been unbound from `{message.channel.name}` | `{message.channel.id}`!"
             embedColor = 0xa900da
             await globalModLog(message, args, embedColor)
 
@@ -396,7 +396,7 @@ async def globalban(message, arg):
         success = "That user has been banned!"
         await successEmbed(message, success)
 
-        args = "Banned user-id `{}` from the global chat!".format(userId)
+        args = f"Banned user-id `{userId}` from the global chat!"
         embedColor = 0xff0019
         await globalModLog(message, args, embedColor)
     else:
@@ -418,7 +418,7 @@ async def globalunban(message, arg):
                 success = "That user has been unbanned!"
                 await successEmbed(message, success)
 
-                args = "Unbanned user-id `{}` from the global chat!".format(userId)
+                args = f"Unbanned user-id `{userId}` from the global chat!"
                 embedColor = 0xff0019
                 await globalModLog(message, args, embedColor)
     else:
@@ -452,7 +452,7 @@ async def globalserverban(message, arg):
         success = "That server has been banned!"
         await successEmbed(message, success)
 
-        args = "Banned guild-id `{}` from the global chat!".format(serverId)
+        args = f"Banned guild-id `{serverId}` from the global chat!"
         embedColor = 0xff0019
         await globalModLog(message, args, embedColor)
     else:
@@ -473,7 +473,7 @@ async def globalserverunban(message, arg):
                 success = "That server has been unbanned!"
                 await successEmbed(message, success)
 
-                args = "Unbanned guild-id `{}` from the global chat!".format(serverId)
+                args = f"Unbanned guild-id `{serverId}` from the global chat!"
                 embedColor = 0xff0019
                 await globalModLog(message, args, embedColor)
     else:
@@ -507,7 +507,7 @@ async def filteradd(message, arg):
         success = "That word will now be filtered!"
         await successEmbed(message, success)
 
-        args = "Added `{}` to the filter!".format(filterWord)
+        args = f"Added `{filterWord}` to the filter!"
         embedColor = 0xed74b7
         await globalModLog(message, args, embedColor)
     else:
@@ -528,7 +528,7 @@ async def filterremove(message, arg):
                 success = "That word will no longer be filtered!"
                 await successEmbed(message, success)
 
-                args = "Removed `{}` from the filter!".format(filterWord)
+                args = f"Removed `{filterWord}` from the filter!"
                 embedColor = 0xed74b7
                 await globalModLog(message, args, embedColor)
     else:
@@ -591,14 +591,14 @@ async def setcolour(message, arg):
     arg = "0x" + arg
     colourId = int(arg, 0)
     if colourId > 16777215:
-        error = "`{0}` is more than `16777215`. Try using hexadecimal!".format(colourId)
+        error = f"`{colourId}` is more than `16777215`. Try using hexadecimal!"
         await errorEmbed(message, error)
         return
     data = json.load(open("globalcolours.json", "r"))
 
     for guild in data["guild"]:
         if guild["guild-id"] == guildId:
-            error = "The embed colour has already been set to `{0}` for this server,\nIf you wish to change your colour, type `{1}resetcolour` first!".format(guild["colour-id"], bot.command_prefix)
+            error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{bot.command_prefix}resetcolour` first!"
             await errorEmbed(message, error)
             return
 
@@ -610,10 +610,10 @@ async def setcolour(message, arg):
     )
     json.dump(data, open("globalcolours.json", "w"), indent=4)
 
-    success = "The embed colour for this server has been set to `{0}`!".format(arg)
+    success = f"The embed colour for this server has been set to `{arg}`!"
     await successEmbed(message, success)
 
-    args = "Embed colour has been set to `{0}` | `{1}`!".format(arg, colourId)
+    args = f"Embed colour has been set to `{arg}` | `{colourId}`!"
     embedColor = 0xa900da
     await globalModLog(message, args, embedColor)
 
@@ -636,3 +636,6 @@ async def resetcolour(message):
             await globalModLog(message, args, embedColor)
 
 bot.run(token)
+
+
+# btw laith you are a part of the chad "" gang, not the loser '' gang.
