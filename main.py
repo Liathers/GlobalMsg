@@ -564,7 +564,7 @@ async def devhelp(message):
 `{0}globalunban <ping/user-id>` - Unban a user from global messaging
 `{0}globalserverunban <server-id>`  -Unban an entire server from global messaging
 `{0}filterremove <word>` - Remove a word from the filter
-        """.format(get_prefix(bot, message))
+        """.format(get_prefix(bot, message)[0])
 
         embed = discord.Embed(timestamp=message.message.created_at)
         await globalColour(embed, guildId)
