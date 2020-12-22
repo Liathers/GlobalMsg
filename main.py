@@ -709,23 +709,6 @@ async def setcolour(message, arg):
     embedColor = 0xa900da
     await globalModLog(message, args, embedColor)
 
-@bot.command(pass_context=True)
-@commands.has_permissions(administrator=True)
-async def resetcolour(message):
-    guildId = message.guild.id
-    data = json.load(open("database/globalcolours.json", "r"))
-
-    for ii in data["guild"]:
-        if ii["guild-id"] == guildId:
-            data["guild"].pop(globalColourPosition(guildId))
-            json.dump(data, open("database/globalcolours.json", "w"), indent=4)
-
-            success = "The embed colour for this server has been reset!"
-            await successEmbed(message, success)
-
-            args = "Reset guild embed colour!"
-            embedColor = 0xa900da
-            await globalModLog(message, args, embedColor)
 
 
 @bot.command(pass_context=True) # <--- pretty sure pass_context is not needed :thonk:, or atleast i dont use it
