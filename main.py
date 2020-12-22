@@ -10,7 +10,8 @@ devMode = False
 def get_prefix(bot, message):
     data = json.load(open("database/prefixes.json"))
     try:
-        return [data[str(message.guild.id)], f"<@!{bot.user.id}> "]
+        #return [data[str(message.guild.id)], f"<@!{bot.user.id}> "]
+        return data[str(message.guild.id)] #idk, I did this to make the help embed look better? There migh be a better method tho
     except:
         return [config["prefix"], f"<@!{bot.user.id}> "]
         
@@ -291,15 +292,25 @@ async def help(message):
 `{0}setcolour <hexadecimal>` - Set the global embed colour for this server
 `{0}resetcolour` - Reset the global embed colour for this server
 `{0}invite` - Invite this bot to your server
-`{0}`
+`{0}setprefix` - Set a prefix for this guild
 
 *This bot can be found on top.gg [here](https://top.gg/bot/747929473495859241)!*
     """.format(get_prefix(bot, message))
+
+    contributorPage = """
+
+`Laith#0617`
+<:Github:790615511829708840> Laith's [github](https://github.com/LaithDevelopment)
+
+`ItsIsaac#0001`
+<:Github:790615511829708840> Isaac's [github](https://github.com/1tsIsaac)
+"""
 
     embed = discord.Embed(timestamp=message.message.created_at)
     await globalColour(embed, guildId)
     embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
     embed.add_field(name=":tools: Help", value=helpPage, inline=False)
+    embed.add_field(name="Contributors:", value=contributorPage, inline=False)
     embed.set_footer(text="Report bugs to Laith#0617")
     await message.send(embed=embed)
 
@@ -649,22 +660,23 @@ async def resetcolour(message):
 
 @bot.command(pass_context=True) # <--- pretty sure pass_context is not needed :thonk:, or atleast i dont use it
 @commands.has_permissions(manage_guild=True)
-async def setprefix(ctx, prefix: str):
+async def setprefix(message, prefix: str):
 
     # if the prefix is too long return an error
     if len(prefix) > 5:
-        return await ctx.send(f"You cannot set a prefix above 5 characters, {ctx.author.mention}")
+        return await message.send(f"You cannot set a prefix above 5 characters, {message.author.mention}")
 
     data = json.load(open("database/prefixes.json", "r"))
 
-    data[str(ctx.guild.id)] = prefix
+    data[str(message.guild.id)] = prefix
 
     json.dump(
         obj=data,
         fp=open("database/prefixes.json", "w"),
         indent=4
     )
-
+    success = f"The prefix for this server has been set to `{prefix}`!"
+    await successEmbed(message, success)
     # return the embed, idk, your code is too messy lmao-
 
 
@@ -673,4 +685,5 @@ async def setprefix(ctx, prefix: str):
 bot.run(token)
 
 
-# btw laith you are a part of the chad "" gang, not the loser '' gang.
+# btw laith you are a part of the chad "" gang, not the loser '' gang. 
+# Indeed lmao
