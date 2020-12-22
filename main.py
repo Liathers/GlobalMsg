@@ -3,16 +3,14 @@ from discord.ext import commands
 from config import *
 import json
 import asyncio
-devMode = False
+devMode = True
 
 
 # fetches the prefix for the guild a command is ran in
 def get_prefix(bot, message):
     data = json.load(open("database/prefixes.json"))
     try:
-        return [data[str(message.guild.id)], f"<@!{bot.user.id}> "]
-        # ive fixed it (wasnt really broken, there was just confusion!
-        # basically, when calling get_prefix() do get_prefix(args)[0] since it returns a list >.<
+        return [data[str(message.guild.id)], f"<@!{bot.user.id}>"]
     except:
         return [config["prefix"], f"<@!{bot.user.id}> "]
         
@@ -87,7 +85,7 @@ async def checkMessage(message, args):
 
 
 
-#set global message embed colour
+#global message embed colour
 async def globalColour(embed, guildId):
     data = json.load(open("database/globalcolours.json", "r"))
     for guild in data["guild"]:
@@ -95,6 +93,19 @@ async def globalColour(embed, guildId):
             embed.colour = discord.Colour(guild["colour-id"])
         else:
             continue
+
+async def reserGlobalColour(message):
+    guildId = message.guild.id
+    data = json.load(open("database/globalcolours.json", "r"))
+
+    for ii in data["guild"]:
+        if ii["guild-id"] == guildId:
+            data["guild"].pop(globalColourPosition(guildId))
+            json.dump(data, open("database/globalcolours.json", "w"), indent=4)
+
+            args = "Reset guild embed colour!"
+            embedColor = 0xa900da
+            await globalModLog(message, args, embedColor)
 
 
 
@@ -291,12 +302,12 @@ async def help(message):
 `{0}bind` - Bind the global chat to the current channel
 `{0}unbind` - Unbind the global chat from the current channel
 `{0}setcolour <hexadecimal>` - Set the global embed colour for this server
-`{0}resetcolour` - Reset the global embed colour for this server
 `{0}invite` - Invite this bot to your server
 `{0}setprefix` - Set a prefix for this guild
+You can use `{0}` or `@{1}` to execute commands
 
 *This bot can be found on top.gg [here](https://top.gg/bot/747929473495859241)!*
-    """.format(get_prefix(bot, message)[0])
+    """.format(get_prefix(bot, message)[0], bot.user.name)
 
     contributorPage = """
 
@@ -621,9 +632,7 @@ async def setcolour(message, arg):
 
     for guild in data["guild"]:
         if guild["guild-id"] == guildId:
-            error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{get_prefix(bot, message)[0]}resetcolour` first!"
-            await errorEmbed(message, error)
-            return
+            await reserGlobalColour(message)
 
     data["guild"].append(
         {
@@ -639,25 +648,6 @@ async def setcolour(message, arg):
     args = f"Embed colour has been set to `{arg}` | `{colourId}`!"
     embedColor = 0xa900da
     await globalModLog(message, args, embedColor)
-
-@bot.command(pass_context=True)
-@commands.has_permissions(administrator=True)
-async def resetcolour(message):
-    guildId = message.guild.id
-    data = json.load(open("database/globalcolours.json", "r"))
-
-    for ii in data["guild"]:
-        if ii["guild-id"] == guildId:
-            data["guild"].pop(globalColourPosition(guildId))
-            json.dump(data, open("database/globalcolours.json", "w"), indent=4)
-
-            success = "The embed colour for this server has been reset!"
-            await successEmbed(message, success)
-
-            args = "Reset guild embed colour!"
-            embedColor = 0xa900da
-            await globalModLog(message, args, embedColor)
-
 
 @bot.command(pass_context=True) # <--- pretty sure pass_context is not needed :thonk:, or atleast i dont use it
 @commands.has_permissions(manage_guild=True)
