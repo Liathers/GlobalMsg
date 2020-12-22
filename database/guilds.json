@@ -1,0 +1,8 @@
+[
+    {
+        "guild-id": 123456789,
+        "channel-id": 123456789,
+        "colour-id": 1234,
+        "prefix": "~"
+    }
+]

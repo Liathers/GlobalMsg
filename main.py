@@ -6,6 +6,16 @@ import asyncio
 devMode = False
 
 
+# returns true if a guild is in guilds.json, false otherwise
+def guildInJSON(guildId: int):
+    data = json.load(open("database/guilds.json", "r"))
+    for guild in data:
+        if guild["guild-id"] == guildId:
+            return True
+
+    return False
+
+
 # fetches the prefix for the guild a command is ran in
 def get_prefix(bot, message):
     data = json.load(open("database/prefixes.json"))
@@ -226,6 +236,42 @@ async def on_connect():
 
 @bot.event
 async def on_ready():
+    # check for guilds that are not in guilds.json
+    data = json.load(open("database/guilds.json", "r"))
+    guild_id_list = []
+    for guild in bot.guilds:
+        guild_id_list.append(guild.id)
+    pos = 0
+    for guild in data:
+        if guild["guild-id"] not in guild_id_list:
+            data.pop(pos)
+            
+
+        pos += 1
+
+    for guild in guild_id_list:
+        pos = 0
+        for gguild in data:
+            if gguild["guild-id"] == guild:
+                continue
+
+            if pos == len(guild_id_list) - 1:
+                data.append({
+                    "guild-id": guild,
+                    "channel-id": None,
+                    "colour-id": None,
+                    "prefix": bot.command_prefix[0]
+                })
+
+            pos += 1
+
+        
+
+    json.dump(data, open("database/guilds.json", "w"))
+        
+
+
+
     print(f"Logged in as {bot.user.name} - {bot.user.id}")
     while True:
         totalGuilds = str(len(bot.guilds))
@@ -238,6 +284,25 @@ async def globally_block_dms(message):
 
 @bot.event
 async def on_guild_join(guild):
+    data = json.load(open("database/guilds.json", "r"))
+    # add the guild to guilds.json
+    if guildInJSON(guild.id):
+        pos = 0
+        for gguild in data:
+            if gguild["guild-id"] == guild.id:
+                data.pop(pos)
+                json.dump(data, open("database/guilds.json", "w"))
+                return
+            pos += 1
+
+    elif not guildInJSON(guild.id):
+        data.append({
+            "guild-id": guild.id,
+            "channel-id": None,
+            "colour-id": None,
+            "prefix": bot.command_prefix[0]
+        })
+
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             welcomePage = """
@@ -619,16 +684,20 @@ async def setcolour(message, arg):
         return
     data = json.load(open("database/globalcolours.json", "r"))
 
-    for guild in data["guild"]:
+
+    for guild in data:
         if guild["guild-id"] == guildId:
-            error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{get_prefix(bot, message)[0]}resetcolour` first!"
-            await errorEmbed(message, error)
-            return
+            if guild["colour-id"] != None:
+                error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{get_prefix(bot, message)[0]}resetcolour` first!"
+                await errorEmbed(message, error)
+                return
 
     data["guild"].append(
         {
-            "guild-id": guildId,
-            "colour-id": colourId
+            "guild-id": 123456789,
+            "channel-id": 123456789,
+            "colour-id": 1234,
+            "prefix": "~"
         }
     )
     json.dump(data, open("database/globalcolours.json", "w"), indent=4)
@@ -667,13 +736,15 @@ async def setprefix(message, prefix: str):
     if len(prefix) > 5:
         return await message.send(f"You cannot set a prefix above 5 characters, {message.author.mention}")
 
-    data = json.load(open("database/prefixes.json", "r"))
+    data = json.load(open("database/guilds.json", "r"))
 
-    data[str(message.guild.id)] = prefix
+    for guild in data:
+        if guild["guild-id"] == message.guild.id:
+            guild["prefix"] = prefix
 
     json.dump(
         obj=data,
-        fp=open("database/prefixes.json", "w"),
+        fp=open("database/guilds.json", "w"),
         indent=4
     )
     success = f"The prefix for this server has been set to `{prefix}`!"
