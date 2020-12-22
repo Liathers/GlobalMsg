@@ -10,8 +10,9 @@ devMode = False
 def get_prefix(bot, message):
     data = json.load(open("database/prefixes.json"))
     try:
-        #return [data[str(message.guild.id)], f"<@!{bot.user.id}> "]
-        return data[str(message.guild.id)] #idk, I did this to make the help embed look better? There migh be a better method tho
+        return [data[str(message.guild.id)], f"<@!{bot.user.id}> "]
+        # ive fixed it (wasnt really broken, there was just confusion!
+        # basically, when calling get_prefix() do get_prefix(args)[0] since it returns a list >.<
     except:
         return [config["prefix"], f"<@!{bot.user.id}> "]
         
@@ -295,7 +296,7 @@ async def help(message):
 `{0}setprefix` - Set a prefix for this guild
 
 *This bot can be found on top.gg [here](https://top.gg/bot/747929473495859241)!*
-    """.format(get_prefix(bot, message))
+    """.format(get_prefix(bot, message)[0])
 
     contributorPage = """
 
@@ -321,7 +322,7 @@ async def setup(message):
     embed = discord.Embed()
     await globalColour(embed, guildId)
     embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-    embed.add_field(name=":hammer: Setup", value=f"Create a channel that will be dedicated for GlobalMsg, then use `{get_prefix(bot, message)}bind` to bind the global chat to the channel", inline=False)
+    embed.add_field(name=":hammer: Setup", value=f"Create a channel that will be dedicated for GlobalMsg, then use `{get_prefix(bot, message)[0]}bind` to bind the global chat to the channel", inline=False)
     await message.send(embed=embed)
 
 @bot.command()
@@ -620,7 +621,7 @@ async def setcolour(message, arg):
 
     for guild in data["guild"]:
         if guild["guild-id"] == guildId:
-            error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{get_prefix(bot, message)}resetcolour` first!"
+            error = f"The embed colour has already been set to `{guild['colour-id']}` for this server,\nIf you wish to change your colour, type `{get_prefix(bot, message)[0]}resetcolour` first!"
             await errorEmbed(message, error)
             return
 
