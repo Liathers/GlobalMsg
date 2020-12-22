@@ -10,7 +10,7 @@ devMode = True
 def get_prefix(bot, message):
     data = json.load(open("database/prefixes.json"))
     try:
-        return [data[str(message.guild.id)], f"<@!{bot.user.id}>"]
+        return [data[str(message.guild.id)], f"<@!{bot.user.id}> "]
     except:
         return [config["prefix"], f"<@!{bot.user.id}> "]
         
@@ -94,7 +94,7 @@ async def globalColour(embed, guildId):
         else:
             continue
 
-async def reserGlobalColour(message):
+async def resetGlobalColour(message):
     guildId = message.guild.id
     data = json.load(open("database/globalcolours.json", "r"))
 
@@ -632,7 +632,7 @@ async def setcolour(message, arg):
 
     for guild in data["guild"]:
         if guild["guild-id"] == guildId:
-            await reserGlobalColour(message)
+            await resetGlobalColour(message)
 
     data["guild"].append(
         {
