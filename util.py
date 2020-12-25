@@ -169,6 +169,15 @@ def add_to_filter(word: str):
     )
 
 
+# Returns True if the word is in the filter, False otherwise
+def message_filtered(message: str):
+    message = message.content.lower()
+    for word in filter_json():
+        if message.find(word) == -1:
+            return True
+    
+    return False
+
 
 # Removes a word from the filter
 def remove_from_filter(word: str):

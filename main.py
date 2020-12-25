@@ -48,6 +48,11 @@ async def on_command_error(ctx, error):
             content=f"This command can only be run in NSFW channels, <@!{ctx.author.id}>!",
             delete_after=10
         )
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(
+            content=f"Make sure you are putting in all required arguments, <@!{ctx.author.id}>!",
+            delete_after=10
+        )
     else:
         await ctx.send(
             content=f"Unknown error! Please report this to ItsIsaac#0001 or Laith#0617!:\n```{error}```"
@@ -104,6 +109,7 @@ async def on_ready():
 
 # Broadcast a message to all binded channels
 async def broadcast(message):
+    # Form the embed
     embed = util.fancy_embed(
         ctx=message,
         description=message.content
@@ -116,6 +122,7 @@ async def broadcast(message):
         text=f"Sent from: {message.guild.name}",
         icon_url=message.guild.icon_url
     )
+    # Send the message to every binded channel
     for channel in binded_cache:
         if channel == message.channel.id:
             continue
@@ -133,6 +140,152 @@ async def broadcast(message):
         await channel.send(
             embed=embed
         )
+    
+    await log(message, message, 0)
+
+
+# await log an event in the moderation channel
+# event 0 - message sent | event 1 - message blocked 
+# event 2 - bind | event 3 - unbind
+# event 4 - set-colour
+# event 5 - banned user | event 6 - unbanned user
+async def log(ctx, info, event: int): 
+    mod_channel = bot.get_channel(config["dev-guild"]["moderation-log"])
+    # Message sent
+    if event == 0:
+        # Form the embed
+        embed = util.fancy_embed(
+            ctx=None,
+            description=f"Message sent: {info}"
+        )
+        embed.colour(discord.Colour(3093151))
+        embed.set_author(
+            name=f"{ctx.author} | {ctx.author.id}",
+            icon_url=ctx.author.avatar_url
+        )
+        embed.set_footer(
+            text=f"{ctx.guild.name} | ({ctx.guild.id})",
+            icon_url=ctx.guild.icon_url
+        )
+        # Send it
+        await mod_channel.send(
+            embed=embed
+        )
+    elif event == 1:
+        # Form the embed
+        embed = util.fancy_embed(
+            ctx=None,
+            description=f"Message blocked: {info}"
+        )
+        embed.colour(discord.Colour(16712763))
+        embed.set_author(
+            name=f"{ctx.author} | {ctx.author.id}",
+            icon_url=ctx.author.avatar_url
+        )
+        embed.set_footer(
+            text=f"{ctx.guild.name} | ({ctx.guild.id})",
+            icon_url=ctx.guild.icon_url
+        )
+        # Send it
+        await mod_channel.send(
+            embed=embed
+        )
+    elif event == 2:
+        # Form the embed
+        embed = util.fancy_embed(
+            ctx=None,
+            description=f"Binded to `{info.name}` | {info.id}!"
+        )
+        embed.colour(discord.Colour(3093151))
+        embed.set_author(
+            name=f"{ctx.author} | {ctx.author.id}",
+            icon_url=ctx.author.avatar_url
+        )
+        embed.set_footer(
+            text=f"{ctx.guild.name} | ({ctx.guild.id})",
+            icon_url=ctx.guild.icon_url
+        )
+        # Send it
+        await mod_channel.send(
+            embed=embed
+        )
+    elif event == 3:
+        # Form the embed
+        embed = util.fancy_embed(
+            ctx=None,
+            description=f"Unbound from `{info.name}` | {info.id}!"
+        )
+        embed.colour(discord.Colour(3093151))
+        embed.set_author(
+            name=f"{ctx.author} | {ctx.author.id}",
+            icon_url=ctx.author.avatar_url
+        )
+        embed.set_footer(
+            text=f"{ctx.guild.name} | ({ctx.guild.id})",
+            icon_url=ctx.guild.icon_url
+        )
+        # Send it
+        await mod_channel.send(
+            embed=embed
+        )
+    elif event == 4:
+        # Form the embed
+        embed = util.fancy_embed(
+            ctx=None,
+            description=f"Set colour theme to `{info}`!"
+        )
+        embed.colour(discord.Colour(3093151))
+        embed.set_author(
+            name=f"{ctx.author} | {ctx.author.id}",
+            icon_url=ctx.author.avatar_url
+        )
+        embed.set_footer(
+            text=f"{ctx.guild.name} | ({ctx.guild.id})",
+            icon_url=ctx.guild.icon_url
+        )
+        # Send it
+        await mod_channel.send(
+            embed=embed
+        )
+    elif event == 5:
+        # Form the embed
+        embed = util.fancy_embed(
+            ctx=None,
+            description=f"Banned {info}!"
+        )
+        embed.colour(discord.Colour(3093151))
+        embed.set_author(
+            name=f"{ctx.author} | {ctx.author.id}",
+            icon_url=ctx.author.avatar_url
+        )
+        embed.set_footer(
+            text="Ban event",
+            icon_url=ctx.guild.icon_url
+        )
+        # Send it
+        await mod_channel.send(
+            embed=embed
+        )
+    elif event == 6:
+        # Form the embed
+        embed = util.fancy_embed(
+            ctx=None,
+            description=f"Unbanned {info}!"
+        )
+        embed.colour(discord.Colour(3093151))
+        embed.set_author(
+            name=f"{ctx.author} | {ctx.author.id}",
+            icon_url=ctx.author.avatar_url
+        )
+        embed.set_footer(
+            text="Ban event",
+            icon_url=ctx.guild.icon_url
+        )
+        # Send it
+        await mod_channel.send(
+            embed=embed
+        )
+
 
 
 # When a message is sent
@@ -152,6 +305,17 @@ async def on_message(message):
         if message.author.id in banned_users_cache:
             return
 
+        # Check the message for filtered words
+        if util.message_filtered(message):
+            await message.channel.send(
+                content=f"Your message has been blocked, <@!{message.author.id}>!",
+                delete_after=10
+            )
+            await log(message, message, 1)
+            return
+
+
+        # Broadcast the message
         await broadcast(message)
 
 
@@ -228,6 +392,12 @@ async def bind(ctx, channel: discord.TextChannel = None):
             title="Success!",
             description=f"Successfully binded to `{channel.name}`!"
         )
+    )
+    
+    await log(
+        ctx=ctx, 
+        info=channel, 
+        event=2
     )
 
 
@@ -321,6 +491,7 @@ async def unbind(ctx):
             description=f"Successfully unbinded from `{binded_channel.name}`!"
         )
     )
+    await log(ctx, binded_channel, 3)
     return
 
 
@@ -330,13 +501,23 @@ async def unbind(ctx):
 @commands.has_permissions(manage_guild=True)
 async def set_colour(ctx, colour):
     # Do stuff to the colour >.>
-    if isinstance(colour, str):
-        colour = f"0x{colour}"
+    if not colour.startswith("0x"):
+        if isinstance(colour, str):
+            colour = f"0x{colour}"
     colour = int(colour, 0)
     # If the colour decimal is too large
     if colour > 16777215:
         await ctx.send(
             content=f"`{colour}` is higher than `16777215`. Try using hexadecimal!",
+            delete_after=10
+        )
+        
+        return
+        
+    # If the colour is unchanged
+    if colour == util.get_guild_attr(ctx.guild.id, "theme"):
+        await ctx.send(
+            content=f"`{colour}` is already your colour theme, <@!{ctx.author.id}>!",
             delete_after=10
         )
         
@@ -356,6 +537,8 @@ async def set_colour(ctx, colour):
             description=f"Successfully changed the embed colour to `{colour}`!"
         )
     )
+
+    await log(ctx, colour, 4)
 
 
 
